@@ -28,9 +28,9 @@ def violin_plot():
 
 	files = ["glt.csv", "pcddt.csv", "cddt.csv", "rm.csv", "bl.csv"]
 	label = ['Lookup table','Pruned CDDT','CDDT','Ray Marching',"Bresenham's line"]
-	files = map(lambda x: folder + x, files)
+	files = [folder + x for x in files]
 	# print files
-	data = map(get_data, files)
+	data = list(map(get_data, files))
 
 	pos = [1,2,3,4,5]
 
@@ -72,9 +72,9 @@ def violin_plot():
 
 
 if __name__ == '__main__':
-	print "Hello world."
+	print("Hello world.")
 	# dist_transform = make_small_distance_transform_plot("./maps/basement.map.yaml")
 	violin_plot()
-	print "Done making plot"
+	print("Done making plot")
 	# plt.savefig('test.png', bbox_inches='tight')
 	plt.show()

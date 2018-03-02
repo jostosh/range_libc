@@ -16,7 +16,7 @@ parser.add_argument('--path', help='Path to serialized json CDDT data structure'
 class Map(object):
     """ Map saved in a serialized CDDT """
     def __init__(self, data):
-        print "...loading map"
+        print("...loading map")
         self.path = data["path"]
         self.width = data["width"]
         self.height = data["height"]
@@ -37,20 +37,20 @@ class CDDTSlice(object):
         return [len(lut_bin) for lut_bin in self.zeros]
 
     def ddt_dims(self):
-        non_empty_zeros = filter(lambda x: len(x) > 0, self.zeros)
-        min_zero = min(map(min, non_empty_zeros))
-        max_zero = max(map(max, non_empty_zeros))
+        non_empty_zeros = [x for x in self.zeros if len(x) > 0]
+        min_zero = min(list(map(min, non_empty_zeros)))
+        max_zero = max(list(map(max, non_empty_zeros)))
         return [int(np.ceil(max_zero - min_zero))+1,len(self.zeros)]
 
     def make_ddt(self, saw_tooth=True, reversed_dir=False):
-        non_empty_zeros = filter(lambda x: len(x) > 0, self.zeros)
+        non_empty_zeros = [x for x in self.zeros if len(x) > 0]
         if len(non_empty_zeros) == 0:
-            print "Empty slice, nothing to visualize"
+            print("Empty slice, nothing to visualize")
             return
 
         # print map(min, self.zeros)
-        min_zero = min(map(min, non_empty_zeros))
-        max_zero = max(map(max, non_empty_zeros))
+        min_zero = min(list(map(min, non_empty_zeros)))
+        max_zero = max(list(map(max, non_empty_zeros)))
         height = int(np.ceil(max_zero - min_zero))+1
 
         grid_height = len(self.zeros)
@@ -58,16 +58,16 @@ class CDDTSlice(object):
         ddt = np.zeros((grid_height,len(self.zeros)))
         offset = int((grid_height - height) / 2.0)
 
-        for x in xrange(len(self.zeros)):
+        for x in range(len(self.zeros)):
             for zp in self.zeros[x]:
                 y = int(zp - min_zero+offset)
                 ddt[y,x] = 1
 
         if saw_tooth:
-            for x in xrange(len(self.zeros)):
+            for x in range(len(self.zeros)):
                 if reversed_dir:
                     last = -1
-                    for y in reversed(xrange(grid_height)):
+                    for y in reversed(range(grid_height)):
                         if ddt[y,x] == 1:
                             last = 0
                             ddt[y,x] = last
@@ -79,7 +79,7 @@ class CDDTSlice(object):
                             ddt[y,x] = -1
                 else:
                     last = -1
-                    for y in xrange(grid_height):
+                    for y in range(grid_height):
                         if ddt[y,x] == 1:
                             last = 0
                             ddt[y,x] = last
@@ -102,31 +102,31 @@ class CDDTSlice(object):
 class CDDT(object):
     """ Loads a serialized CDDT datastructure for visualization and manipulation """
     def __init__(self, path):
-        print "Loading CDDT:", path
+        print("Loading CDDT:", path)
         self.path = path
-        print "..opening file"
+        print("..opening file")
         cddt_file = open(path, 'r')
-        print "..loading json"
+        print("..loading json")
         cddt_raw = ujson.load(cddt_file)
 
         if not "cddt" in cddt_raw:
-            print "Incorrectly formatted data, exiting."
+            print("Incorrectly formatted data, exiting.")
             return
 
         cddt_raw = cddt_raw["cddt"]
-        print "..parsing"
+        print("..parsing")
         self.lut_translations = np.array(cddt_raw["lut_translations"])
         self.max_range = cddt_raw["max_range"]
         self.theta_discretization = cddt_raw["theta_discretization"]
         self.map = Map(cddt_raw["map"])
-        print "..loading slices"
-        self.slices = map(CDDTSlice, cddt_raw["compressed_lut"])
+        print("..loading slices")
+        self.slices = list(map(CDDTSlice, cddt_raw["compressed_lut"]))
         self.slices = self.slices[:int(len(self.slices)/2)]
 
     # makes a histogram of number of elements in each LUT bin
     def zeros_hist(self):
         # print self.slices[0].zeros()
-        num_zeros = map(lambda x: x.num_zeros(), self.slices)
+        num_zeros = [x.num_zeros() for x in self.slices]
         plt.hist(num_zeros)
         plt.show()
         # print list(itertools.chain.from_iterable(num_zeros))
@@ -172,7 +172,7 @@ class SliceScroller(object):
         
 
     def onscroll(self, evt):
-        print("Slice: %s  Theta: %s" % (self.ind, self.cddt.slices[self.ind].theta))
+        print(("Slice: %s  Theta: %s" % (self.ind, self.cddt.slices[self.ind].theta)))
         self.ind = int((self.ind + evt.step) % len(self.cddt.slices))
         self.update()
 
@@ -187,7 +187,7 @@ class SliceScroller(object):
         # if self.ddts[self.ind] == None:
             self.ddts[self.ind] = np.sqrt(self.cddt.slices[self.ind].make_ddt(True)).transpose()
        
-        ys = map(len, self.cddt.slices[self.ind].zeros)
+        ys = list(map(len, self.cddt.slices[self.ind].zeros))
         compression_factor = 2*self.cddt.map.width * self.cddt.map.height / (sum(ys))
 
         self.ax1.set_title("DDT - Reconstructed from a slice of the PCDDT, compression factor: " + str(compression_factor))
